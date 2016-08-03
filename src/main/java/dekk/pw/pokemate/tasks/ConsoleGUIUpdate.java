@@ -3,6 +3,7 @@ package dekk.pw.pokemate.tasks;
 import com.pokegoapi.api.player.PlayerLevelUpRewards;
 import com.pokegoapi.exceptions.LoginFailedException;
 import com.pokegoapi.exceptions.RemoteServerException;
+import dekk.pw.pokemate.Config;
 import dekk.pw.pokemate.Context;
 import dekk.pw.pokemate.PokeMate;
 import dekk.pw.pokemate.PokeMateUI;
@@ -10,6 +11,7 @@ import dekk.pw.pokemate.PokeMateUI;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Formatter;
 
 import static dekk.pw.pokemate.Context.millisToTimeString;
 import static dekk.pw.pokemate.util.StringConverter.convertItemAwards;
@@ -62,16 +64,20 @@ public class ConsoleGUIUpdate extends Task implements Runnable {
 
             if (curLevel > lastLevel) {
                 PlayerLevelUpRewards rewards = context.getProfile().acceptLevelUpRewards(curLevel - 1);
-                if (rewards.getStatus() == PlayerLevelUpRewards.Status.NEW) {
-                    String levelUp = "New level: " + curLevel;
-                    levelUp += convertItemAwards(rewards.getRewards());
+                if (rewards.getStatus() == PlayerLevelUpRewards.Status.NEW && Config.isShowUI()) {
+                    final String levelUp = "New level: " + curLevel + convertItemAwards(rewards.getRewards());
                     PokeMateUI.toast(levelUp, "Level Up", "icons/items/backpack.png");
                 }
                 lastLevel = curLevel;
             }
 
-            return "Name: " + context.getProfile().getPlayerData().getUsername() + "\t Level: " + context.getProfile().getStats().getLevel() + " - "+ new DecimalFormat("#,###,###").format((experienceGained / (runTime / 3.6E6))) +
-                "XP/Hour - Next level in " + new DecimalFormat("###,###,###").format(nextXP - curLevelXP) +  "XP - Runtime: " + millisToTimeString(runTime);
+            return String.format("Name: %-15s [%s] Level %d - %,.2fXP/H - Next Level in %,.0fXP - Runtime: %s",
+                                    context.getProfile().getPlayerData().getUsername(),
+                                    new SimpleDateFormat("HH:mm:ss").format(new Date()),
+                                    curLevel,
+                                   experienceGained / (runTime / 3.6E6),
+                                    nextXP-curLevelXP,
+                                    millisToTimeString(runTime));
         } catch (LoginFailedException | RemoteServerException e) {
             e.printStackTrace();
             return "Error Updating Header";
